@@ -2,7 +2,9 @@
 
 PR 02 establishes the typed vocabulary used by later simulation layers. It is
 intentionally a data and interface layer: it does not load configurations,
-advance a clock, allocate robots, or execute tasks.
+advance a clock, allocate robots, or execute tasks. PR 03 adds NumPy and PyYAML
+outside this core module for deterministic streams and configuration loading;
+the domain models and protocols themselves remain standard-library only.
 
 ## Identity, units, and defaults
 
@@ -15,6 +17,8 @@ advance a clock, allocate robots, or execute tasks.
   zero for a stationary robot.
 - Capabilities, requirements, and resource quantities are finite,
   nonnegative floats. Empty mappings mean that no quantity is specified.
+- `RobotSpec.incompatible_robot_ids` contains symmetric robot-level exclusions;
+  every referenced ID must exist in the enclosing `ScenarioSpec`.
 - Robot specifications default to type `generic`, speed `1.0`, and one
   concurrent task. Tasks default to type `generic`, release tick `0`, workload
   `1.0`, reward `0.0`, and coalition size bounds `[1, unbounded]`.

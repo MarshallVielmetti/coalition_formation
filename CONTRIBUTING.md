@@ -11,9 +11,11 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 ```
 
-The core package has no runtime dependencies in this foundation release. The
-`viz`, `graph`, `opt`, and `rl` extras are reserved for later roadmap items;
-they must remain optional and must not be imported by the core package.
+The domain models and protocols use only the Python standard library. NumPy
+and PyYAML are package runtime dependencies for deterministic random streams
+and YAML configuration loading. The `viz`, `graph`, `opt`, and `rl` extras are
+reserved for later roadmap items; they must remain optional and must not be
+imported by the core package.
 
 This PR introduces no simulator behavior, scenario configuration, random
 stream, event, or trace schema. Later implementation PRs must document and

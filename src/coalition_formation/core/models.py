@@ -262,6 +262,7 @@ class RobotSpec:
     position: Point | None = None
     speed: float = 1.0
     max_concurrent_tasks: int = 1
+    incompatible_robot_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _require_id(self.robot_id, "robot_id")
@@ -281,6 +282,13 @@ class RobotSpec:
             "max_concurrent_tasks",
             _as_count(self.max_concurrent_tasks, "max_concurrent_tasks"),
         )
+        object.__setattr__(
+            self,
+            "incompatible_robot_ids",
+            _freeze_ids(self.incompatible_robot_ids, "incompatible_robot_ids"),
+        )
+        if self.robot_id in self.incompatible_robot_ids:
+            raise ValueError("a robot cannot be incompatible with itself")
 
     def to_dict(self) -> JsonObject:
         return {
@@ -291,10 +299,16 @@ class RobotSpec:
             "position": list(self.position) if self.position is not None else None,
             "speed": self.speed,
             "max_concurrent_tasks": self.max_concurrent_tasks,
+            "incompatible_robot_ids": list(self.incompatible_robot_ids),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> RobotSpec:
+        incompatible_robot_ids = data.get("incompatible_robot_ids", [])
+        if isinstance(incompatible_robot_ids, (str, bytes)) or not isinstance(
+            incompatible_robot_ids, Sequence
+        ):
+            raise TypeError("incompatible_robot_ids must be a sequence")
         return cls(
             robot_id=cast(str, data["robot_id"]),
             robot_type=cast(str, data.get("robot_type", "generic")),
@@ -303,6 +317,9 @@ class RobotSpec:
             position=_optional_point(data, "position"),
             speed=cast(float, data.get("speed", 1.0)),
             max_concurrent_tasks=cast(int, data.get("max_concurrent_tasks", 1)),
+            incompatible_robot_ids=tuple(
+                cast(str, item) for item in incompatible_robot_ids
+            ),
         )
 
 
@@ -419,6 +436,20 @@ class ScenarioSpec:
             raise ValueError("robots must not contain duplicate IDs")
         if len(set(task_ids)) != len(task_ids):
             raise ValueError("tasks must not contain duplicate IDs")
+        robot_id_set = set(robot_ids)
+        for robot in robots:
+            unknown_ids = set(robot.incompatible_robot_ids) - robot_id_set
+            if unknown_ids:
+                raise ValueError(
+                    f"incompatible_robot_ids for {robot.robot_id!r} "
+                    "reference unknown IDs"
+                )
+            for incompatible_id in robot.incompatible_robot_ids:
+                other = next(
+                    item for item in robots if item.robot_id == incompatible_id
+                )
+                if robot.robot_id not in other.incompatible_robot_ids:
+                    raise ValueError("robot incompatibility pairs must be symmetric")
         task_id_set = set(task_ids)
         dependencies = tuple(
             sorted(
