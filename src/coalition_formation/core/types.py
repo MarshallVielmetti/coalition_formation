@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
+MAX_SEED = 2**128 - 1
+
 EntityId: TypeAlias = str
 Tick: TypeAlias = int
 Point: TypeAlias = tuple[float, float]

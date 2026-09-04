@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from .core.types import MAX_SEED
+
 STREAM_NAMES: tuple[str, ...] = (
     "scenario",
     "dynamics",
@@ -14,14 +16,13 @@ STREAM_NAMES: tuple[str, ...] = (
     "communication",
     "policy",
 )
-_MAX_SEED = 2**128 - 1
 
 
 def _validate_seed(value: int, field_name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{field_name} must be a nonnegative integer")
-    if not 0 <= value <= _MAX_SEED:
-        raise ValueError(f"{field_name} must be between 0 and {_MAX_SEED}")
+    if not 0 <= value <= MAX_SEED:
+        raise ValueError(f"{field_name} must be between 0 and {MAX_SEED}")
     return value
 
 

@@ -9,6 +9,8 @@ from coalition_formation.config import (
     export_resolved_config,
     load_config,
 )
+from coalition_formation.core.types import MAX_SEED
+from coalition_formation.rng import RandomStreams
 
 
 def test_config_requires_version_and_materializes_defaults() -> None:
@@ -74,3 +76,19 @@ def test_configuration_rejects_unknown_fields_and_non_json_parameters() -> None:
             scenario="example",
             parameters={"not_json": object()},
         )
+
+
+def test_configuration_and_rng_share_the_same_seed_limit() -> None:
+    config = ResolvedConfig(
+        schema_version="1.0",
+        scenario="example",
+        seed=MAX_SEED,
+        policy_seed=MAX_SEED,
+    )
+    streams = RandomStreams(config.seed, config.policy_seed)
+    streams.generator("scenario").integers(0, 10)
+
+    with pytest.raises(ConfigurationError, match="between 0 and"):
+        ResolvedConfig(schema_version="1.0", scenario="example", seed=MAX_SEED + 1)
+    with pytest.raises(ValueError, match="between 0 and"):
+        RandomStreams(MAX_SEED + 1)

@@ -11,7 +11,7 @@ from typing import cast
 
 import yaml  # type: ignore[import-untyped]
 
-from .core.types import JsonObject, JsonValue
+from .core.types import MAX_SEED, JsonObject, JsonValue
 
 CONFIG_SCHEMA_VERSION = "1.0"
 
@@ -28,9 +28,13 @@ def _require_nonempty_string(value: object, field_name: str) -> str:
 
 def _require_seed(value: object, field_name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
-        raise ConfigurationError(f"{field_name} must be a nonnegative integer")
-    if value < 0:
-        raise ConfigurationError(f"{field_name} must be a nonnegative integer")
+        raise ConfigurationError(
+            f"{field_name} must be an integer between 0 and {MAX_SEED}"
+        )
+    if not 0 <= value <= MAX_SEED:
+        raise ConfigurationError(
+            f"{field_name} must be an integer between 0 and {MAX_SEED}"
+        )
     return value
 
 
