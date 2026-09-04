@@ -115,6 +115,17 @@ def test_small_and_random_presets_have_documented_shapes() -> None:
     assert {len(robot.capabilities) for robot in random_scenario.robots} <= {3}
 
 
+def test_random_scenario_rejects_unsupported_parameters() -> None:
+    config = ResolvedConfig(
+        schema_version=CONFIG_SCHEMA_VERSION,
+        scenario="static_capability/random",
+        parameters={"robot_counts": 4},
+    )
+
+    with pytest.raises(ValueError, match="unsupported parameter"):
+        construct_scenario(config)
+
+
 def test_static_edge_case_fixtures() -> None:
     scarcity = construct_scenario(_config("static_capability/scarcity"))
     rare_providers = [

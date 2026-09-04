@@ -6,6 +6,8 @@ from ..config import ResolvedConfig
 from ..core.models import RobotSpec, ScenarioSpec, TaskSpec
 from ..rng import RandomStreams
 
+_RANDOM_SCENARIO_PARAMETERS = frozenset({"robot_count", "task_count", "skill_count"})
+
 
 def static_capability_tiny(
     config: ResolvedConfig, streams: RandomStreams
@@ -72,6 +74,11 @@ def _seeded_random_scenario(
     task_count: int,
     skill_count: int,
 ) -> ScenarioSpec:
+    unsupported = sorted(set(config.parameters) - _RANDOM_SCENARIO_PARAMETERS)
+    if unsupported:
+        names = ", ".join(unsupported)
+        raise ValueError(f"unsupported parameter(s) for random scenario: {names}")
+
     robot_count = _integer_parameter(config, "robot_count", robot_count, 1)
     task_count = _integer_parameter(config, "task_count", task_count, 1)
     skill_count = _integer_parameter(config, "skill_count", skill_count, 1)
