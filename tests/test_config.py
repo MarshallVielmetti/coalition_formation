@@ -92,3 +92,22 @@ def test_configuration_and_rng_share_the_same_seed_limit() -> None:
         ResolvedConfig(schema_version="1.0", scenario="example", seed=MAX_SEED + 1)
     with pytest.raises(ValueError, match="between 0 and"):
         RandomStreams(MAX_SEED + 1)
+
+
+def test_to_dict_deep_copies_nested_parameters() -> None:
+    config = ResolvedConfig(
+        schema_version="1.0",
+        scenario="example",
+        parameters={"nested": {"values": [1]}},
+    )
+
+    exported = config.to_dict()
+    exported_parameters = exported["parameters"]
+    assert isinstance(exported_parameters, dict)
+    exported_nested = exported_parameters["nested"]
+    assert isinstance(exported_nested, dict)
+    exported_values = exported_nested["values"]
+    assert isinstance(exported_values, list)
+    exported_values.append(2)
+
+    assert config.to_dict()["parameters"] == {"nested": {"values": [1]}}

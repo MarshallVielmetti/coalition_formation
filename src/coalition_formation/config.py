@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
@@ -127,7 +128,7 @@ class ResolvedConfig:
             "scenario": self.scenario,
             "seed": self.seed,
             "policy_seed": self.policy_seed,
-            "parameters": dict(self.parameters),
+            "parameters": deepcopy(dict(self.parameters)),
         }
 
     def to_json(self) -> str:
