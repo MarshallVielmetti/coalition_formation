@@ -7,6 +7,7 @@ The first artifact is a literature-grounded study of the problem taxonomy, canon
 - [Canonical scenarios and simulator implications](docs/research/canonical_scenarios.md)
 - [Agent-ready pull request roadmap](docs/implementation/PR_ROADMAP.md)
 - [Domain model and plugin protocols](docs/implementation/domain_model.md)
+- [Configuration, random streams, and static scenarios](docs/implementation/configuration_and_scenarios.md)
 
 No simulator implementation has been selected or claimed yet. The recommended first implementation milestone is recorded at the end of the research note.
 
@@ -23,10 +24,11 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 ```
 
-The foundation package is intentionally behavior-free and has no runtime
-dependencies. Future visualization, graph, optimization, and reinforcement
-learning dependencies are kept in the optional `viz`, `graph`, `opt`, and `rl`
-extras. They are not imported by the core package.
+The domain models and protocols remain behavior-free and standard-library
+only. NumPy and PyYAML are runtime dependencies for the named random-stream
+and configuration APIs. Future visualization, graph, optimization, and
+reinforcement learning dependencies are kept in the optional `viz`, `graph`,
+`opt`, and `rl` extras; they are not imported by the core package.
 
 Run the repository quality gate with:
 
