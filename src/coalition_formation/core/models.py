@@ -359,9 +359,9 @@ class TaskSpec:
             object.__setattr__(self, "max_coalition_size", max_size)
         if (
             self.time_window is not None
-            and self.release_tick > self.time_window.end_tick
+            and self.release_tick >= self.time_window.end_tick
         ):
-            raise ValueError("release_tick cannot be after the time-window end")
+            raise ValueError("release_tick must be before the time-window end")
 
     def to_dict(self) -> JsonObject:
         return {

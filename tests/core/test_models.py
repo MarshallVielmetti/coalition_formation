@@ -158,6 +158,15 @@ def test_duplicate_ids_and_unknown_dependency_endpoints_are_rejected() -> None:
         )
 
 
+def test_release_at_exclusive_window_end_is_rejected() -> None:
+    with pytest.raises(ValueError, match="release_tick must be before"):
+        TaskSpec(
+            task_id="t1",
+            release_tick=3,
+            time_window=TimeWindow(start_tick=0, end_tick=3),
+        )
+
+
 def test_observation_is_a_read_only_policy_boundary() -> None:
     world = WorldState(robots={"r1": RobotState(robot_id="r1")})
     observation = Observation.from_world_state(world)
