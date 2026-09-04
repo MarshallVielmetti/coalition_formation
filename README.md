@@ -6,6 +6,7 @@ The first artifact is a literature-grounded study of the problem taxonomy, canon
 
 - [Canonical scenarios and simulator implications](docs/research/canonical_scenarios.md)
 - [Agent-ready pull request roadmap](docs/implementation/PR_ROADMAP.md)
+- [Domain model and plugin protocols](docs/implementation/domain_model.md)
 
 No simulator implementation has been selected or claimed yet. The recommended first implementation milestone is recorded at the end of the research note.
 
