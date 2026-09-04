@@ -10,3 +10,28 @@ The first artifact is a literature-grounded study of the problem taxonomy, canon
 No simulator implementation has been selected or claimed yet. The recommended first implementation milestone is recorded at the end of the research note.
 
 - 2026-09-03: Did XYZ
+
+## Developer setup
+
+The project targets Python 3.11 and newer. Create an isolated environment and
+install the package with its development tools:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+```
+
+The foundation package is intentionally behavior-free and has no runtime
+dependencies. Future visualization, graph, optimization, and reinforcement
+learning dependencies are kept in the optional `viz`, `graph`, `opt`, and `rl`
+extras. They are not imported by the core package.
+
+Run the repository quality gate with:
+
+```bash
+python -m pytest
+python -m ruff check .
+python -m ruff format --check .
+python -m mypy src
+```
