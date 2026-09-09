@@ -215,6 +215,8 @@ class SimulationKernel:
             {
                 "scenario_id": self.scenario.scenario_id,
                 "scenario_schema_version": self.scenario.schema_version,
+                "scenario": self.scenario.to_dict(),
+                "horizon": self.horizon,
             },
             self._world,
         )
@@ -535,6 +537,7 @@ class SimulationKernel:
         )
 
     def _advance_work(self) -> None:
+        outcomes: list[tuple[str, str | None]] = []
         for coalition_id in sorted(self._world.coalitions):
             coalition = self._world.coalitions[coalition_id]
             if coalition.status is not CoalitionStatus.ACTIVE:
@@ -554,10 +557,12 @@ class SimulationKernel:
                     )
                 )
             except Exception as error:
-                self._fail_task(task.task_id, f"task dynamics error: {error}")
+                outcomes.append((task.task_id, f"task dynamics error: {error}"))
                 continue
             if not isfinite(next_progress) or not 0.0 <= next_progress <= 1.0:
-                self._fail_task(task.task_id, "task dynamics returned invalid progress")
+                outcomes.append(
+                    (task.task_id, "task dynamics returned invalid progress")
+                )
                 continue
             tasks = dict(self._world.tasks)
             tasks[task.task_id] = replace(task_state, progress=next_progress)
@@ -572,21 +577,26 @@ class SimulationKernel:
                 replace(self._world, tasks=tasks),
             )
             if next_progress >= 1.0:
+                outcomes.append((task.task_id, None))
+        for task_id, failure in outcomes:
+            if failure is not None:
+                self._fail_task(task_id, failure)
+            else:
                 tasks = dict(self._world.tasks)
-                tasks[task.task_id] = replace(
-                    tasks[task.task_id],
+                completed_coalition_id = tasks[task_id].assigned_coalition_id
+                tasks[task_id] = replace(
+                    tasks[task_id],
                     status=TaskStatus.COMPLETED,
                     completion_tick=self._world.tick,
                 )
                 self._transition(
                     EventType.COMPLETION,
                     {
-                        "coalition_id": coalition_id,
-                        "task_id": task.task_id,
+                        "coalition_id": completed_coalition_id,
+                        "task_id": task_id,
                     },
                     replace(self._world, tasks=tasks),
                 )
-                self._cleanup_coalition(coalition_id, "task completed")
 
     def _fail_task(self, task_id: str, reason: str) -> None:
         task_state = self._world.tasks[task_id]
@@ -608,9 +618,6 @@ class SimulationKernel:
             {"task_id": task_id, "reason": reason},
             replace(self._world, tasks=tasks),
         )
-        coalition_id = task_state.assigned_coalition_id
-        if coalition_id is not None and coalition_id in self._world.coalitions:
-            self._cleanup_coalition(coalition_id, "task failed")
 
     def _check_deadlines(self) -> None:
         for task in self.scenario.tasks:
@@ -626,6 +633,13 @@ class SimulationKernel:
                 and self._world.tick + 1 >= task.time_window.end_tick
             ):
                 self._fail_task(task.task_id, "time window expired")
+        for coalition_id, coalition in self._world.coalitions.items():
+            status = self._world.tasks[coalition.task_id].status
+            if coalition.status is CoalitionStatus.ACTIVE and status in {
+                TaskStatus.COMPLETED,
+                TaskStatus.FAILED,
+            }:
+                self._cleanup_coalition(coalition_id, f"task {status.value}")
 
     def _terminate(self, status: TerminalStatus, reason: str) -> None:
         if self._world.terminal_status is not None:
@@ -720,19 +734,22 @@ class SimulationKernel:
         )
         if proposal_error is not None:
             self._apply_action(NoOpAction(reason="policy error"))
-            self._policy_error(proposal_error, action=selected_action)
             self._advance_work()
             self._check_deadlines()
+            self._policy_error(proposal_error, action=selected_action)
             self._finish_step()
             return self._world
         try:
             self._apply_action(selected_action)
         except InvalidActionError as error:
-            self._policy_error(str(error), action=selected_action)
             if explicit:
+                self._policy_error(str(error), action=selected_action)
                 raise
+            proposal_error = str(error)
         self._advance_work()
         self._check_deadlines()
+        if proposal_error is not None:
+            self._policy_error(proposal_error, action=selected_action)
         self._finish_step()
         return self._world
 
@@ -790,12 +807,20 @@ class SimulationKernel:
             active_trace = read_trace(trace)
         else:
             raise TypeError("trace must be an EventTrace or JSONL path")
-        kernel = cls(scenario)
+        if (
+            not active_trace.events
+            or active_trace.events[0].event_type is not EventType.RESET
+        ):
+            raise ValueError("kernel replay requires a reset event")
+        metadata = active_trace.events[0].payload
+        if metadata.get("scenario") != scenario.to_dict():
+            raise ValueError("trace scenario does not match supplied scenario")
+        kernel = cls(scenario, horizon=cast(int | None, metadata.get("horizon")))
         kernel._events = list(active_trace.events)
         kernel._insertion_sequence = (
             active_trace.events[-1].insertion_sequence + 1 if active_trace.events else 0
         )
-        kernel._world = active_trace.replay()
+        kernel._world = active_trace.replay(kernel._initial_world())
         kernel._has_reset = bool(active_trace.events)
         return kernel
 

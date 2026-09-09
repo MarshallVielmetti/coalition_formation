@@ -60,6 +60,15 @@ assert saved_trace.replay() == kernel.world
 
 `SimulationKernel.replay(scenario, "run.jsonl")` restores a kernel from the
 saved trace without constructing or invoking the original policy.
+Kernel replay requires a reset record containing the matching full scenario
+specification and checks its initial state hash. Older traces without that
+metadata can still be read through `EventTrace`, but kernel replay rejects
+them because their specifications cannot be verified. Reset records also
+preserve the effective horizon for continuation.
+
+Each tick processes all work events before completion and failure events,
+then performs coalition cleanup. This keeps simultaneous completions and
+deadline failures in priority order while preserving the state hash chain.
 
 ## Failure and terminal behavior
 

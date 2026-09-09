@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -208,3 +209,46 @@ def test_policy_errors_are_traceable_without_breaking_order_or_replay() -> None:
     assert result.terminal_status is TerminalStatus.TIMED_OUT
     assert any(event.event_type is EventType.POLICY_ERROR for event in kernel.events)
     assert kernel.trace.replay() == result
+
+
+@pytest.mark.parametrize("second_workload", [1, 5])
+def test_simultaneous_outcomes_preserve_trace_order(second_workload: int) -> None:
+    scenario = ScenarioSpec(
+        "simultaneous",
+        robots=(RobotSpec("r1"), RobotSpec("r2")),
+        tasks=(
+            TaskSpec("t1", workload=2),
+            TaskSpec("t2", workload=second_workload, time_window=TimeWindow(0, 2)),
+        ),
+    )
+    kernel = SimulationKernel(scenario)
+    kernel.step(FormCoalitionAction("c1", "t1", ("r1",)))
+    kernel.step(FormCoalitionAction("c2", "t2", ("r2",)))
+    keys = [event.ordering_key() for event in kernel.events]
+    assert keys == sorted(keys)
+    from coalition_formation.core.trace import EventTrace
+
+    assert EventTrace.from_jsonl(kernel.trace.to_jsonl()).replay() == kernel.world
+
+
+@pytest.mark.parametrize("change", ["id", "requirements", "workload", "horizon"])
+def test_replay_rejects_modified_scenario(change: str) -> None:
+    scenario = ScenarioSpec(
+        "source", robots=(RobotSpec("r1"),), tasks=(TaskSpec("t1", workload=3),)
+    )
+    kernel = SimulationKernel(scenario)
+    kernel.step(FormCoalitionAction("c1", "t1", ("r1",)))
+    if change == "id":
+        modified = replace(scenario, scenario_id="different")
+    elif change == "horizon":
+        modified = replace(scenario, horizon=5)
+    elif change == "requirements":
+        modified = replace(
+            scenario, tasks=(replace(scenario.tasks[0], requirements={"skill": 1}),)
+        )
+    else:
+        modified = replace(scenario, tasks=(replace(scenario.tasks[0], workload=4),))
+    with pytest.raises(ValueError, match="scenario"):
+        SimulationKernel.replay(modified, kernel.trace)
+    restored = SimulationKernel.replay(scenario, kernel.trace)
+    assert restored.step(NoOpAction()) == kernel.step(NoOpAction())
