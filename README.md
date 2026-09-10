@@ -8,8 +8,11 @@ The first artifact is a literature-grounded study of the problem taxonomy, canon
 - [Agent-ready pull request roadmap](docs/implementation/PR_ROADMAP.md)
 - [Domain model and plugin protocols](docs/implementation/domain_model.md)
 - [Configuration, random streams, and static scenarios](docs/implementation/configuration_and_scenarios.md)
+- [Deterministic kernel and event trace](docs/implementation/kernel_and_trace.md)
 
-No simulator implementation has been selected or claimed yet. The recommended first implementation milestone is recorded at the end of the research note.
+The allocation-only deterministic kernel and replayable event trace are now
+implemented as the first simulation layer. Spatial travel, optimization,
+rendering, and learning adapters remain later roadmap items.
 
 - 2026-09-03: Did XYZ
 

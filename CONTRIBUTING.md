@@ -17,9 +17,9 @@ and YAML configuration loading. The `viz`, `graph`, `opt`, and `rl` extras are
 reserved for later roadmap items; they must remain optional and must not be
 imported by the core package.
 
-This PR introduces no simulator behavior, scenario configuration, random
-stream, event, or trace schema. Later implementation PRs must document and
-version those reproducibility-facing interfaces when they are introduced.
+The deterministic allocation kernel and versioned event trace are core
+interfaces. Later implementation PRs must preserve their replay and ordering
+guarantees when extending the simulator.
 
 ## Quality checks
 
