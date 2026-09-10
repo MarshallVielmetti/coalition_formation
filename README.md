@@ -9,6 +9,7 @@ The first artifact is a literature-grounded study of the problem taxonomy, canon
 - [Domain model and plugin protocols](docs/implementation/domain_model.md)
 - [Configuration, random streams, and static scenarios](docs/implementation/configuration_and_scenarios.md)
 - [Deterministic kernel and event trace](docs/implementation/kernel_and_trace.md)
+- [Independent auditor and exact static oracle](docs/implementation/auditor_and_oracle.md)
 
 The allocation-only deterministic kernel and replayable event trace are now
 implemented as the first simulation layer. Spatial travel, optimization,
